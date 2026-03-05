@@ -13,6 +13,7 @@ const askQuestion = async (req, res, next) => {
     }
 
     const result = await aiService.generateExplanation(question, difficulty);
+    console.log("DEBUG BACKEND: AI Result:", result);
     
     sendResponse(res, {
       statusCode: 200,

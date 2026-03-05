@@ -1,4 +1,5 @@
 const globalErrorHandler = (err, req, res, next) => {
+  console.error("DEBUG BACKEND ERROR:", err);
   let statusCode = 500;
   let message = "Something went wrong !";
   let errorMessages = [];

@@ -16,4 +16,11 @@ const moduleRoutes = [
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
 
+router.get("/", (req, res) => {
+  res.send({
+    success: true,
+    message: "Edumentor AI API is running..",
+  });
+});
+
 module.exports = router;
