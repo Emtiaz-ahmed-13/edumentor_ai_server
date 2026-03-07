@@ -23,16 +23,47 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
         Question: "${question}"
         
         Please provide a structured, clear, and educational explanation appropriate for a ${difficulty} level.
+        
+        Return your response as a JSON object with these exact fields:
+        {
+          "explanation": "A clear, simple explanation of the concept",
+          "realLifeExample": "A real-life example that illustrates the concept",
+          "analogy": "An analogy that makes the concept easier to understand",
+          "keyPoints": ["Point 1", "Point 2", "Point 3", "Point 4"]
+        }
+        
+        Make sure the response is valid JSON with no additional text.
       `;
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
+      // Try to parse the JSON response
+      let parsedResponse;
+      try {
+        // Extract JSON from the response (in case there's extra text)
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          parsedResponse = JSON.parse(text);
+        }
+      } catch (parseError) {
+        console.log("Failed to parse JSON, using fallback");
+        // If JSON parsing fails, create a structured response from the text
+        parsedResponse = {
+          explanation: text,
+          realLifeExample: "See explanation above",
+          analogy: "See explanation above",
+          keyPoints: [text.substring(0, 100) + "..."]
+        };
+      }
+
       return {
         question,
         difficulty,
-        explanation: text,
+        ...parsedResponse
       };
     } catch (error) {
       console.error(`Failed with model ${modelName}:`, error.message);
@@ -48,3 +79,4 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
 module.exports = {
   generateExplanation,
 };
+
