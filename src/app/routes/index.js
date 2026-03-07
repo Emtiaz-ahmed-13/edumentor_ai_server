@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const AuthRoutes = require("../modules/Auth/auth.route");
 const AIRoutes = require("../modules/AI/ai.route");
+const ConceptRoutes = require("../modules/Concept/concept.route");
 
 const moduleRoutes = [
   {
@@ -11,6 +12,10 @@ const moduleRoutes = [
   {
     path: "/ai",
     route: AIRoutes,
+  },
+  {
+    path: "/concepts",
+    route: ConceptRoutes,
   },
 ];
 

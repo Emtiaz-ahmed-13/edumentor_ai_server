@@ -1,3 +1,8 @@
+const dotenv = require("dotenv");
+const path = require("path");
+
+dotenv.config({ path: path.join(process.cwd(), ".env") });
+
 const config = require("./config");
 const mongoose = require("mongoose");
 const app = require("./app");
@@ -16,3 +21,4 @@ async function main() {
 }
 
 main();
+

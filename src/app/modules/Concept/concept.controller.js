@@ -1,0 +1,81 @@
+const sendResponse = require("../../utils/sendResponse");
+const Concept = require("./concept.model");
+
+/**
+ * Concept Controller
+ * Student: Syed Muntazir Mehdi (ID: 22299525)
+ * Feature 4 - EduMentor AI
+ */
+
+// GET /concepts/history - Get all saved concepts, newest first
+const getHistory = async (req, res, next) => {
+  try {
+    const concepts = await Concept.find()
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select("-__v");
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Concept history fetched successfully",
+      data: concepts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /concepts/:id - Get a single concept by ID
+const getConceptById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const concept = await Concept.findById(id).select("-__v");
+
+    if (!concept) {
+      return res.status(404).json({
+        success: false,
+        message: "Concept not found",
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Concept fetched successfully",
+      data: concept,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /concepts/:id - Delete a concept by ID
+const deleteConcept = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Concept.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Concept not found",
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Concept deleted successfully",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getHistory,
+  getConceptById,
+  deleteConcept,
+};
