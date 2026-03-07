@@ -3,15 +3,13 @@ const aiService = require("./ai.service");
 const Concept = require("../Concept/concept.model");
 
 /**
- * AI Controller - Handles AI explanation requests
- * Student: Syed Muntazir Mehdi (ID: 22299525)
- * Feature 4 - EduMentor AI
+ * AI Controller - Handles AI explanation requests with conversation history
  */
 
 const askQuestion = async (req, res, next) => {
   try {
-    const { question, difficulty } = req.body;
-
+    const { question, difficulty, conversationHistory } = req.body;
+    
     if (!question) {
       return res.status(400).json({
         success: false,
@@ -19,8 +17,11 @@ const askQuestion = async (req, res, next) => {
       });
     }
 
+    // conversationHistory is an optional array of {role, content} objects
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+
     // Generate explanation via Gemini AI
-    const result = await aiService.generateExplanation(question, difficulty);
+    const result = await aiService.generateExplanation(question, difficulty, history);
     console.log("DEBUG BACKEND: AI Result generated for topic:", question);
 
     // Auto-save the result to MongoDB
@@ -42,7 +43,6 @@ const askQuestion = async (req, res, next) => {
       // Non-fatal - still return the AI result even if DB save fails
     }
 
-    // Return AI result with the saved concept's _id if available
     sendResponse(res, {
       statusCode: 200,
       success: true,
