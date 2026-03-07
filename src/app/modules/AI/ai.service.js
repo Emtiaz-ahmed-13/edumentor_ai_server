@@ -1,13 +1,53 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const generateExplanation = async (question, difficulty = "intermediate") => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  
+/**
+ * Converts a flat chat history array [{role, content}] to Gemini's
+ * native multi-turn format [{role: "user"|"model", parts: [{text}]}].
+ * The initial AI greeting is excluded (handled by the system prompt instead).
+ */
+const buildGeminiHistory = (conversationHistory = []) => {
+  return conversationHistory
+    .filter((msg) => msg && msg.role && msg.content)
+    .map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content) }],
+    }));
+};
+
+const SYSTEM_PROMPT = `You are EduMentor, an expert academic tutor AI. Your job is to answer student questions clearly, logically, and educationally.
+
+When answering, ALWAYS follow this exact JSON structure — no extra text, no markdown fences, only valid JSON:
+{
+  "explanation": "A concise, clear overview of the concept or answer (2-4 sentences).",
+  "steps": [
+    "Step 1: <first logical step or part of the explanation>",
+    "Step 2: <second logical step>",
+    "Step 3: <third logical step>"
+  ],
+  "analogy": "A creative real-world analogy that makes the concept intuitive.",
+  "realLifeExample": "A concrete real-life example of this concept in action.",
+  "keyPoints": [
+    "Key point 1",
+    "Key point 2",
+    "Key point 3"
+  ]
+}
+
+Rules:
+- The "steps" array must have at least 3 entries and represent a logical, sequential breakdown of the concept or answer.
+- Always use prior conversation context to answer follow-up questions accurately.
+- If the question is a follow-up (e.g., "explain step 2 more"), refer back to the relevant step from the previous answer.
+- Difficulty level guidance: for "beginner" use simple language; for "intermediate" include technical terms; for "advanced" go deep with technical depth.
+- NEVER wrap the JSON in markdown code blocks. Output ONLY a raw JSON object.`;
+
+const generateExplanation = async (question, difficulty = "intermediate", conversationHistory = []) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is missing in environment variables.");
   }
 
-  // List of models verified available via diagnostic script
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+  // Models to try in order
   const modelsToTry = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest", "gemini-pro-latest"];
   let lastError;
 
@@ -16,33 +56,30 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
       console.log(`Attempting AI generation with model: ${modelName}`);
       const model = genAI.getGenerativeModel({ model: modelName });
 
-      const prompt = `
-        You are an expert academic tutor.
-        The user is asking a question at a "${difficulty}" difficulty level.
-        
-        Question: "${question}"
-        
-        Please provide a structured, clear, and educational explanation appropriate for a ${difficulty} level.
-        
-        Return your response as a JSON object with these exact fields:
-        {
-          "explanation": "A clear, simple explanation of the concept",
-          "realLifeExample": "A real-life example that illustrates the concept",
-          "analogy": "An analogy that makes the concept easier to understand",
-          "keyPoints": ["Point 1", "Point 2", "Point 3", "Point 4"]
-        }
-        
-        Make sure the response is valid JSON with no additional text.
-      `;
-      
-      const result = await model.generateContent(prompt);
+      // Build multi-turn history from prior messages
+      const history = buildGeminiHistory(conversationHistory);
+
+      // The final user turn includes difficulty context
+      const currentQuestion = `[Difficulty: ${difficulty}]\n\nQuestion: ${question}`;
+
+      // Build the full contents array: system instruction + history + current question
+      const contents = [
+        // System prompt injected as the first user→model exchange
+        { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+        { role: "model", parts: [{ text: "Understood. I will always respond with only a valid JSON object matching that exact structure." }] },
+        // Prior conversation turns
+        ...history,
+        // The current question
+        { role: "user", parts: [{ text: currentQuestion }] },
+      ];
+
+      const result = await model.generateContent({ contents });
       const response = await result.response;
       const text = response.text();
 
-      // Try to parse the JSON response
+      // Parse JSON response
       let parsedResponse;
       try {
-        // Extract JSON from the response (in case there's extra text)
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           parsedResponse = JSON.parse(jsonMatch[0]);
@@ -50,26 +87,32 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
           parsedResponse = JSON.parse(text);
         }
       } catch (parseError) {
-        console.log("Failed to parse JSON, using fallback");
-        // If JSON parsing fails, create a structured response from the text
+        console.log("Failed to parse JSON, using plain-text fallback");
         parsedResponse = {
           explanation: text,
-          realLifeExample: "See explanation above",
-          analogy: "See explanation above",
-          keyPoints: [text.substring(0, 100) + "..."]
+          steps: ["Step 1: Read the explanation above for a full breakdown."],
+          analogy: "",
+          realLifeExample: "",
+          keyPoints: [],
         };
+      }
+
+      // Ensure steps is always an array
+      if (!Array.isArray(parsedResponse.steps)) {
+        parsedResponse.steps = parsedResponse.steps
+          ? [parsedResponse.steps]
+          : ["Step 1: See the explanation above."];
       }
 
       return {
         question,
         difficulty,
-        ...parsedResponse
+        ...parsedResponse,
       };
     } catch (error) {
       console.error(`Failed with model ${modelName}:`, error.message);
       lastError = error;
-      // If it's not a 404/model error, we might want to break, but let's try all for now
-      continue; 
+      continue;
     }
   }
 
@@ -79,4 +122,3 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
 module.exports = {
   generateExplanation,
 };
-
