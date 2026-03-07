@@ -60,6 +60,31 @@ const askQuestion = async (req, res, next) => {
   }
 };
 
+const analyzeCode = async (req, res, next) => {
+  try {
+    const { code, language, difficulty } = req.body;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: "Code is required",
+      });
+    }
+
+    const result = await aiService.analyzeCode(code, language, difficulty);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Code analyzed successfully!",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   askQuestion,
+  analyzeCode,
 };
