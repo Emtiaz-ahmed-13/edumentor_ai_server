@@ -1,13 +1,6 @@
 const sendResponse = require("../../utils/sendResponse");
 const Concept = require("./concept.model");
 
-/**
- * Concept Controller
- * Student: Syed Muntazir Mehdi (ID: 22299525)
- * Feature 4 - EduMentor AI
- */
-
-// GET /concepts/history - Get all saved concepts, newest first
 const getHistory = async (req, res, next) => {
   try {
     const concepts = await Concept.find()
@@ -26,7 +19,6 @@ const getHistory = async (req, res, next) => {
   }
 };
 
-// GET /concepts/:id - Get a single concept by ID
 const getConceptById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -50,7 +42,6 @@ const getConceptById = async (req, res, next) => {
   }
 };
 
-// DELETE /concepts/:id - Delete a concept by ID
 const deleteConcept = async (req, res, next) => {
   try {
     const { id } = req.params;

@@ -1,11 +1,5 @@
 const mongoose = require("mongoose");
 
-/**
- * Concept Model - Stores AI-generated concept simplifications
- * Student: Syed Muntazir Mehdi (ID: 22299525)
- * Feature 4 - EduMentor AI
- */
-
 const conceptSchema = new mongoose.Schema(
   {
     topic: {
