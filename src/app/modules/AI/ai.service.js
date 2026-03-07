@@ -1,10 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-/**
- * AI Service - Gemini AI Integration
- * Student: Syed Muntazir Mehdi (ID: 22299525)
- * Feature 4 - EduMentor AI
- */
+
 
 const generateExplanation = async (question, difficulty = "intermediate") => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -12,8 +8,6 @@ const generateExplanation = async (question, difficulty = "intermediate") => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is missing in environment variables.");
   }
-
-  // List of models to try in order
   const modelsToTry = [
     "gemini-2.0-flash",
     "gemini-2.5-flash",
