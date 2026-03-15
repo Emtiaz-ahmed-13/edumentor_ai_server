@@ -42,6 +42,38 @@ const getConceptById = async (req, res, next) => {
   }
 };
 
+const updateConcept = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { userNote } = req.body;
+
+    const updates = {};
+    if (typeof userNote === "string") updates.userNote = userNote.trim();
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields to update (userNote allowed)",
+      });
+    }
+
+    const concept = await Concept.findByIdAndUpdate(id, { $set: updates }, { new: true }).select("-__v");
+
+    if (!concept) {
+      return res.status(404).json({ success: false, message: "Concept not found" });
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Concept updated successfully",
+      data: concept,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteConcept = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -68,5 +100,6 @@ const deleteConcept = async (req, res, next) => {
 module.exports = {
   getHistory,
   getConceptById,
+  updateConcept,
   deleteConcept,
 };
