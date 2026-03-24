@@ -9,6 +9,11 @@ const globalErrorHandler = (err, req, res, next) => {
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorMessages = simplifiedError.errorMessages;
+  } else if (err?.message === "Unauthenticated" || err?.status === 401 || err?.statusCode === 401) {
+    // Clerk auth errors
+    statusCode = 401;
+    message = "Unauthorized: Please provide a valid authentication token.";
+    errorMessages = [{ path: "", message: "Authentication required." }];
   } else if (err instanceof Error) {
     message = err?.message;
     errorMessages = err?.message
