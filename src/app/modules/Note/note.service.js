@@ -1,8 +1,8 @@
 const pdfParse = require("pdf-parse-new");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const CHUNK_SIZE = 6000;   
-const MAX_CHUNKS = 8;      
+const WORDS_PER_CHUNK = 500;   
+const MAX_CHUNKS = 20;      
 const MODELS = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-pro"];
 
 // ─── Helper: Gemini model factory ────────────────────────────────────────────
@@ -20,6 +20,7 @@ const safeParseJSON = (text) => {
   if (jsonMatch) return JSON.parse(jsonMatch[0]);
   return JSON.parse(text);
 };
+
 const CHUNK_SUMMARY_PROMPT = `You are EduMentor, an expert academic content analyser.
 Analyse the following excerpt from a student's PDF notes and return a brief JSON summary.
 Return ONLY valid JSON with no extra text or markdown.
@@ -98,14 +99,17 @@ Return ONLY valid JSON — no markdown, no extra text:
   "followUpQuestions": ["A follow-up question the student might have.", "Another related question."]
 }`;
 
-// ─── Split text into chunks ────────────────────────────────────────────────────
-const chunkText = (text, chunkSize = CHUNK_SIZE) => {
+// ─── Chunk text by word count (500 words per chunk) ──────────────────────────
+const chunkByWords = (text, wordsPerChunk = WORDS_PER_CHUNK) => {
+  const words = text.split(/\s+/);
   const chunks = [];
-  let start = 0;
-  while (start < text.length && chunks.length < MAX_CHUNKS) {
-    chunks.push(text.slice(start, start + chunkSize));
-    start += chunkSize;
+  
+  let chunkCount = 0;
+  for (let i = 0; i < words.length && chunkCount < MAX_CHUNKS; i += wordsPerChunk) {
+    chunks.push(words.slice(i, i + wordsPerChunk).join(' '));
+    chunkCount++;
   }
+  
   return chunks;
 };
 
@@ -140,7 +144,7 @@ const summariseChunk = async (model, chunk, index) => {
 };
 
 // ─── Final consolidation from chunk summaries ─────────────────────────────────
-const consolidateSummaries = async (model, chunkSummaries, originalTitle) => {
+const consolidateSummaries = async (model, chunkSummaries) => {
   const combinedText = chunkSummaries
     .map((s, i) => `Section ${i + 1}:\n- Main Ideas: ${s.mainIdeas?.join("; ")}\n- Key Terms: ${s.keyTerms?.join(", ")}\n- Facts: ${s.importantFacts?.join("; ")}`)
     .join("\n\n");
@@ -152,21 +156,21 @@ const consolidateSummaries = async (model, chunkSummaries, originalTitle) => {
   return safeParseJSON(text);
 };
 
-// ─── Main: generate full summary (RAG-style chunking) ─────────────────────────
+// ─── Main: generate full summary (RAG-style with 500-word chunks) ────────────
 const generateSummary = async (text) => {
   try {
     let lastError;
     for (const modelName of MODELS) {
       try {
         const model = getModel(modelName);
-        const chunks = chunkText(text);
-        console.log(`📄 Attempting summary with ${modelName} (${chunks.length} chunks)...`);
+        const chunks = chunkByWords(text, WORDS_PER_CHUNK);
+        console.log(`📄 Attempting summary with ${modelName} (${chunks.length} chunks of ${WORDS_PER_CHUNK} words)...`);
 
         const chunkSummaries = await Promise.all(
           chunks.map((chunk, i) => summariseChunk(model, chunk, i))
         );
 
-        const finalSummary = await consolidateSummaries(model, chunkSummaries, "Note");
+        const finalSummary = await consolidateSummaries(model, chunkSummaries);
         console.log(`✅ Final summary generated successfully with ${modelName}.`);
         return finalSummary;
       } catch (err) {
@@ -186,9 +190,10 @@ const generateAnswerFromNote = async (noteContent, question) => {
   try {
     const model = getModel();
 
-    // Use the most relevant chunk if content is long
-    const relevantContent = noteContent.length > CHUNK_SIZE * 2
-      ? noteContent.slice(0, CHUNK_SIZE * 2)
+    // Use word-based chunking for relevant content
+    const words = noteContent.split(/\s+/);
+    const relevantContent = words.length > WORDS_PER_CHUNK * 4
+      ? words.slice(0, WORDS_PER_CHUNK * 4).join(' ')
       : noteContent;
 
     const prompt = `${DOC_QA_PROMPT}\n\n--- DOCUMENT CONTENT ---\n${relevantContent}\n\n--- STUDENT QUESTION ---\n${question}`;
