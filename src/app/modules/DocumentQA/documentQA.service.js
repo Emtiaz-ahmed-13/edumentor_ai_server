@@ -15,21 +15,51 @@ const extractTextFromBuffer = async (buffer, mimetype) => {
   }
 };
 
-const SYSTEM_PROMPT = `You are EduMentor, an expert academic tutor AI. Your job is to answer student questions based PROVIDED DOCUMENT CONTEXT.
+/**
+ * Helper: Simple keyword-based relevance scoring for chunks.
+ */
+const getRelevantChunks = (text, question, topK = 5) => {
+  const words = text.split(/\s+/);
+  const chunks = [];
+  const chunkSize = 500;
+
+  for (let i = 0; i < words.length; i += chunkSize) {
+    chunks.push(words.slice(i, i + chunkSize).join(" "));
+  }
+
+  const questionWords = question.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  
+  const scoredChunks = chunks.map((chunk, index) => {
+    const chunkLower = chunk.toLowerCase();
+    let score = 0;
+    questionWords.forEach(word => {
+      if (chunkLower.includes(word)) score++;
+    });
+    return { chunk, score, index };
+  });
+
+  return scoredChunks
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK)
+    .map(c => c.chunk);
+};
+
+const SYSTEM_PROMPT = `You are EduMentor, an advanced RAG-powered academic tutor. Your task is to provide high-quality, structured answers based on the provided DOCUMENT EXCERPTS.
 
 When answering, ALWAYS follow this exact JSON structure:
 {
-  "explanation": "A concise, clear answer based on the document (2-4 sentences).",
-  "sourceSnippet": "A direct quote or specific section from the document that justifies the answer.",
+  "explanation": "A synthesis of the answer based on the context (3-5 sentences). Be pedagogical and clear.",
+  "sourceSnippet": "A specific, verbatim quote from the text that directly supports your answer.",
   "keyPoints": [
-    "Key point 1 from the doc",
-    "Key point 2 from the doc"
+    "Core point 1 extracted from the text",
+    "Core point 2 extracted from the text"
   ],
-  "relevanceScore": 1-10 (How well the document relates to the question)
+  "relevanceScore": 1-10 (How well the document context answered the question)
 }
 
 Rules:
-- If the answer is NOT in the document, state that clearly in the explanation but still try to provide a general educational answer if possible, while noting it's not in the doc.
+- If the answer is absolutely not in the excerpts, say so, but provide a general educational answer while clearly distinguishing it from the document content.
+- Support your explanation with the provided sourceSnippet.
 - NEVER wrap the JSON in markdown code blocks. Output ONLY a raw JSON object.`;
 
 const answerFromDocument = async (context, question, difficulty = "intermediate", conversationHistory = []) => {
@@ -38,20 +68,23 @@ const answerFromDocument = async (context, question, difficulty = "intermediate"
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Using flash for speed/cost
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  // Build prompt with context
-  const fullPrompt = `DOCUMENT CONTEXT:
+  // ─── PART OF MAISHA'S TASK: REG-based Retrieval ──────────────────────────
+  const relevantChunks = getRelevantChunks(context, question);
+  const consolidatedContext = relevantChunks.join("\n\n--- SECTION BREAK ---\n\n");
+
+  const fullPrompt = `DOCUMENT EXCERPTS (RANKED BY RELEVANCE):
   """
-  ${context.substring(0, 30000)} 
+  ${consolidatedContext}
   """
   
-  [Difficulty: ${difficulty}]
+  [Target Difficulty: ${difficulty}]
   Question: ${question}`;
 
   const contents = [
     { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-    { role: "model", parts: [{ text: "Understood. I will answer based on the provided document context using the requested JSON format." }] },
+    { role: "model", parts: [{ text: "Understood. I will analyze the provided snippets and provide a structured JSON response based on the document's facts." }] },
     ...conversationHistory.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
@@ -70,9 +103,9 @@ const answerFromDocument = async (context, question, difficulty = "intermediate"
     console.error("Failed to parse AI response:", text);
     return {
       explanation: text,
-      sourceSnippet: "Extraction failed",
+      sourceSnippet: "Analysis completed but JSON formatting failed.",
       keyPoints: [],
-      relevanceScore: 0
+      relevanceScore: 5
     };
   }
 };

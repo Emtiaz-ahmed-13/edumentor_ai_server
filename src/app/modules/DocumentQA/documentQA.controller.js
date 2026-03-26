@@ -17,11 +17,11 @@ const uploadDocument = async (req, res, next) => {
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Document processed successfully!",
+      message: "Document processed and text extracted successfully!",
       data: {
         fileName: originalname,
-        textBatch: extractedText.substring(0, 500) + "...", // Snippet for confirmation
-        fullText: extractedText // In this simple version, we send it back to the client
+        textBatch: extractedText.substring(0, 500) + "...", 
+        fullText: extractedText 
       },
     });
   } catch (error) {
