@@ -4,6 +4,7 @@ const AuthRoutes = require("../modules/Auth/auth.route");
 const AIRoutes = require("../modules/AI/ai.route");
 const ConceptRoutes = require("../modules/Concept/concept.route");
 const DocumentQARoutes = require("../modules/DocumentQA/documentQA.route");
+const NoteRoutes = require("../modules/Note/note.route");
 
 const moduleRoutes = [
   {
@@ -21,6 +22,10 @@ const moduleRoutes = [
   {
     path: "/document-qa",
     route: DocumentQARoutes,
+  },
+  {
+    path: "/notes",
+    route: NoteRoutes,
   },
 ];
 

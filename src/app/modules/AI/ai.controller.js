@@ -29,13 +29,16 @@ const askQuestion = async (req, res, next) => {
     try {
       savedConcept = await Concept.create({
         topic: result.question || question,
+        subject: result.subject || "General",
         difficultyLevel: result.difficulty || difficulty || "beginner",
         explanation: result.explanation,
-        realLifeExample: result.realLifeExample,
-        analogy: result.analogy,
-        keyPoints: result.keyPoints,
+        steps: Array.isArray(result.steps) ? result.steps : [],
+        realLifeExample: result.realLifeExample || "",
+        analogy: result.analogy || "",
+        keyPoints: Array.isArray(result.keyPoints) ? result.keyPoints : [],
         funFact: result.funFact || "",
         commonMisconception: result.commonMisconception || "",
+        followUpQuestions: Array.isArray(result.followUpQuestions) ? result.followUpQuestions : [],
       });
       console.log("DEBUG BACKEND: Concept saved to DB with ID:", savedConcept._id);
     } catch (dbError) {

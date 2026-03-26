@@ -7,6 +7,10 @@ const conceptSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    subject: {
+      type: String,
+      default: "General",
+    },
     difficultyLevel: {
       type: String,
       enum: ["beginner", "intermediate", "advanced"],
@@ -15,6 +19,10 @@ const conceptSchema = new mongoose.Schema(
     explanation: {
       type: String,
       required: true,
+    },
+    steps: {
+      type: [String],
+      default: [],
     },
     realLifeExample: {
       type: String,
@@ -35,6 +43,15 @@ const conceptSchema = new mongoose.Schema(
     commonMisconception: {
       type: String,
       default: "",
+    },
+    followUpQuestions: {
+      type: [String],
+      default: [],
+    },
+    userNote: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   {
