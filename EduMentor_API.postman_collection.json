@@ -5,10 +5,22 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
-    { "key": "clerkToken", "value": "" },
-    { "key": "noteId", "value": "" },
-    { "key": "conceptId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api/v1"
+    },
+    {
+      "key": "clerkToken",
+      "value": ""
+    },
+    {
+      "key": "noteId",
+      "value": ""
+    },
+    {
+      "key": "conceptId",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -33,7 +45,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -48,7 +63,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -68,7 +86,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -83,7 +104,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -98,7 +122,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -136,7 +163,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -165,12 +195,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "pdf", "type": "file", "src": "", "description": "Select PDF file" }
+                {
+                  "key": "pdf",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select PDF file"
+                }
               ]
             },
             "url": "{{baseUrl}}/notes/upload",
@@ -182,7 +220,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              }
             ],
             "url": "{{baseUrl}}/notes",
             "description": "Get all notes for logged-in user"
@@ -193,7 +234,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              }
             ],
             "url": "{{baseUrl}}/notes/{{noteId}}",
             "description": "Get single note. Set noteId from list response"
@@ -204,8 +248,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -220,7 +270,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              }
             ],
             "url": "{{baseUrl}}/notes/{{noteId}}",
             "description": "Delete a note by ID"
@@ -231,8 +284,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{clerkToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clerkToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
