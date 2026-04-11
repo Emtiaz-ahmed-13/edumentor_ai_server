@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const pdf = require("pdf-parse");
+const pdf = require("pdf-parse-new");
 
 /**
  * Extracts text from a document buffer based on mimetype.
