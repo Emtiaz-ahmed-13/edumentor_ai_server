@@ -1,13 +1,12 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const SYSTEM_PROMPT =
   "You are EduMentor, a professional and encouraging AI Tutor. Explain concepts clearly with helpful examples using a friendly educational tone. Keep answers concise and well-structured.";
 
 const generateAIResponse = async (prompt) => {
-  const modelsToTry = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-001"];
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"];
 
   for (const modelName of modelsToTry) {
     try {
