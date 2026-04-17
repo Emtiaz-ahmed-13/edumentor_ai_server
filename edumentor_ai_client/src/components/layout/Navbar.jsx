@@ -1,8 +1,8 @@
 import {
-    SignedIn,
-    SignedOut,
-    SignInButton,
-    UserButton
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton
 } from "@clerk/clerk-react";
 import { Brain, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -22,10 +22,14 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
+    { name: "Smart Study Notes", href: "/notes", isInternal: true },
+    { name: "AI Quiz", href: "/quiz", isInternal: true },
+    { name: "Voice Chat", href: "/voice-chat", isInternal: true },
+    { name: "Concept Simplifier", href: "/concept-simplifier", isInternal: true },
     { name: "Ask AI", href: "/ask-ai", isInternal: true },
+    { name: "Code Optimizer", href: "/code-ai", isInternal: true },
     { name: "Features", href: "#features" },
     { name: "How it Works", href: "#how-it-works" },
-    { name: "Testimonials", href: "#testimonials" },
     { name: "Pricing", href: "#pricing" },
   ];
 
