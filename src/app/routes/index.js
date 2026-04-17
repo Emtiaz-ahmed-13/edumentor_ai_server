@@ -5,6 +5,9 @@ const AIRoutes = require("../modules/AI/ai.route");
 const ConceptRoutes = require("../modules/Concept/concept.route");
 const DocumentQARoutes = require("../modules/DocumentQA/documentQA.route");
 const NoteRoutes = require("../modules/Note/note.route");
+const QuizRoutes = require("../modules/Quiz/quiz.route");
+const StudyRoutes = require("../modules/Study/study.route");
+const NotificationRoutes = require("../modules/Notification/notification.route");
 
 const moduleRoutes = [
   {
@@ -26,6 +29,18 @@ const moduleRoutes = [
   {
     path: "/document-qa",
     route: DocumentQARoutes,
+  },
+  {
+    path: "/quizzes",
+    route: QuizRoutes,
+  },
+  {
+    path: "/study",
+    route: StudyRoutes,
+  },
+  {
+    path: "/notifications",
+    route: NotificationRoutes,
   },
 ];
 

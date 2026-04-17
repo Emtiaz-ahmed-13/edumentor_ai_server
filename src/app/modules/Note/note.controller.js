@@ -4,6 +4,7 @@ const stream = require("stream");
 const sendResponse = require("../../utils/sendResponse");
 const Note = require("./note.model");
 const noteService = require("./note.service");
+const studyService = require("../Study/study.service");
 
 // Cloudinary configuration
 cloudinary.config({
@@ -63,6 +64,9 @@ const uploadNote = async (req, res, next) => {
                 pageCount: pageCount || 0,
                 wordCount: wordCount || 0,
               });
+
+              // Automatically initialize revision schedule for the new note
+              await studyService.initSchedule(userId, noteResult._id);
 
               sendResponse(res, {
                 statusCode: 200,
