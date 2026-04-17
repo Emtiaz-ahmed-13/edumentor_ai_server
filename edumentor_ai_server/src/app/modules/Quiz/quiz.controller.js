@@ -3,7 +3,7 @@ const sendResponse = require("../../utils/sendResponse");
 const quizService = require("./quiz.service");
 const Quiz = require("./quiz.model");
 
-// Feature 9: Generate quiz from topic or pasted material
+// Feature 9: Generate quiz from topic or uploaded material
 const generateQuiz = async (req, res, next) => {
   try {
     const {
@@ -14,7 +14,7 @@ const generateQuiz = async (req, res, next) => {
       material,
     } = req.body;
 
-    if (sourceType === "topic" && !topic) {
+    if (!topic && sourceType === "topic") {
       return res.status(400).json({ success: false, message: "Topic is required." });
     }
     if (sourceType === "material" && !material) {
@@ -31,6 +31,7 @@ const generateQuiz = async (req, res, next) => {
       material
     );
 
+    // Save quiz to MongoDB
     let savedQuiz;
     try {
       savedQuiz = await Quiz.create({
@@ -63,7 +64,81 @@ const generateQuiz = async (req, res, next) => {
   }
 };
 
-// Feature 9: Generate quiz from uploaded PDF
+// Feature 10: Evaluate a descriptive / short-answer response
+const evaluateAnswer = async (req, res, next) => {
+  try {
+    const { question, correctAnswer, userAnswer, maxPoints } = req.body;
+
+    if (!question || !correctAnswer) {
+      return res.status(400).json({
+        success: false,
+        message: "Question and correctAnswer are required.",
+      });
+    }
+    if (!userAnswer || !userAnswer.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "userAnswer is required.",
+      });
+    }
+
+    const evaluation = await quizService.evaluateAnswer(
+      question,
+      correctAnswer,
+      userAnswer,
+      maxPoints
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Answer evaluated successfully!",
+      data: evaluation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get quiz history
+const getQuizHistory = async (req, res, next) => {
+  try {
+    const quizzes = await Quiz.find()
+      .select("title topic subject difficulty sourceType totalQuestions totalPoints createdAt")
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Quiz history fetched.",
+      data: quizzes,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get a single quiz by ID
+const getQuizById = async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found." });
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Quiz fetched.",
+      data: quiz,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Feature 9: Generate quiz from uploaded PDF file
 const generateFromPdf = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -72,6 +147,7 @@ const generateFromPdf = async (req, res, next) => {
 
     const { difficulty = "intermediate", numQuestions = 10 } = req.body;
 
+    // Extract text from PDF buffer
     let extractedText;
     try {
       const data = await pdfParse(req.file.buffer);
@@ -86,7 +162,13 @@ const generateFromPdf = async (req, res, next) => {
     const count = Math.min(Math.max(parseInt(numQuestions) || 10, 3), 20);
     const fileName = req.file.originalname.replace(".pdf", "");
 
-    const result = await quizService.generateQuiz(fileName, difficulty, count, "material", extractedText);
+    const result = await quizService.generateQuiz(
+      fileName,
+      difficulty,
+      count,
+      "material",
+      extractedText
+    );
 
     let savedQuiz;
     try {
@@ -120,62 +202,30 @@ const generateFromPdf = async (req, res, next) => {
   }
 };
 
-// Feature 10: Evaluate a descriptive answer
-const evaluateAnswer = async (req, res, next) => {
+// Delete a quiz
+const deleteQuiz = async (req, res, next) => {
   try {
-    const { question, correctAnswer, userAnswer, maxPoints } = req.body;
-
-    if (!question || !correctAnswer) {
-      return res.status(400).json({ success: false, message: "Question and correctAnswer are required." });
+    const quiz = await Quiz.findByIdAndDelete(req.params.id);
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found." });
     }
-    if (!userAnswer || !userAnswer.trim()) {
-      return res.status(400).json({ success: false, message: "userAnswer is required." });
-    }
-
-    const evaluation = await quizService.evaluateAnswer(question, correctAnswer, userAnswer, maxPoints);
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Answer evaluated successfully!",
-      data: evaluation,
+      message: "Quiz deleted successfully.",
+      data: null,
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getQuizHistory = async (req, res, next) => {
-  try {
-    const quizzes = await Quiz.find()
-      .select("title topic subject difficulty sourceType totalQuestions totalPoints createdAt")
-      .sort({ createdAt: -1 })
-      .limit(20);
-
-    sendResponse(res, { statusCode: 200, success: true, message: "Quiz history fetched.", data: quizzes });
-  } catch (error) {
-    next(error);
-  }
+module.exports = {
+  generateQuiz,
+  generateFromPdf,
+  evaluateAnswer,
+  getQuizHistory,
+  getQuizById,
+  deleteQuiz,
 };
-
-const getQuizById = async (req, res, next) => {
-  try {
-    const quiz = await Quiz.findById(req.params.id);
-    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found." });
-    sendResponse(res, { statusCode: 200, success: true, message: "Quiz fetched.", data: quiz });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const deleteQuiz = async (req, res, next) => {
-  try {
-    const quiz = await Quiz.findByIdAndDelete(req.params.id);
-    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found." });
-    sendResponse(res, { statusCode: 200, success: true, message: "Quiz deleted successfully.", data: null });
-  } catch (error) {
-    next(error);
-  }
-};
-
-module.exports = { generateQuiz, generateFromPdf, evaluateAnswer, getQuizHistory, getQuizById, deleteQuiz };

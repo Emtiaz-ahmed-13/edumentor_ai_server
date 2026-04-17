@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const globalErrorHandler = require("./app/middlewares/globalErrorHandler");
 const router = require("./app/routes");
+const aiRoutes_5 = require("../routes/aiRoutes_5");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // application routes
 app.use("/api/v1", router);
+app.use("/api/v1/ai-5", aiRoutes_5);
 
 app.get("/", (req, res) => {
   res.send({

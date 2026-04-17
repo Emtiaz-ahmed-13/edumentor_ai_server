@@ -7,7 +7,7 @@ const questionSchema = new mongoose.Schema({
     required: true,
   },
   question: { type: String, required: true },
-  options: { type: [String], default: [] },
+  options: { type: [String], default: [] }, // for MCQ and true-false
   correctAnswer: { type: String, required: true },
   explanation: { type: String, default: "" },
   points: { type: Number, default: 10 },

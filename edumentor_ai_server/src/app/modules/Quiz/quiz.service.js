@@ -1,7 +1,9 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+// Only gemini-2.5-flash — highest free tier limit (10 RPM, 250K TPM)
 const MODEL = "gemini-2.5-flash";
 
+// ─── Retry helper: handles 503 overloaded with exponential backoff ────────────
 const callWithRetry = async (model, contents, retries = 5) => {
   for (let i = 0; i < retries; i++) {
     try {
@@ -11,12 +13,13 @@ const callWithRetry = async (model, contents, retries = 5) => {
       const is503 = err?.status === 503 || err?.message?.includes("503");
       const is429 = err?.status === 429 || err?.message?.includes("429");
       if (is503 && i < retries - 1) {
-        const wait = (i + 1) * 8000;
+        const wait = (i + 1) * 8000; // 8s, 16s, 24s, 32s
         console.log(`Model overloaded (503), retrying in ${wait / 1000}s... (attempt ${i + 2}/${retries})`);
         await new Promise((r) => setTimeout(r, wait));
         continue;
       }
       if (is429) {
+        // Quota exceeded — no point retrying, throw immediately
         throw new Error("API quota exceeded. Please wait a few minutes and try again.");
       }
       throw err;
@@ -25,12 +28,13 @@ const callWithRetry = async (model, contents, retries = 5) => {
   throw new Error("Model is currently overloaded. Please try again in a moment.");
 };
 
+// ─── Safe JSON parse ──────────────────────────────────────────────────────────
 const safeParseJSON = (text) => {
   const match = text.match(/\{[\s\S]*\}/);
   return JSON.parse(match ? match[0] : text);
 };
 
-// Feature 9: Generate Quiz
+// ─── Feature 9: Generate Quiz ─────────────────────────────────────────────────
 const generateQuiz = async (topic, difficulty, numQuestions, sourceType, material) => {
   if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing.");
 
@@ -87,7 +91,7 @@ Return ONLY this JSON (no markdown):
   };
 };
 
-// Feature 10: Evaluate Answer
+// ─── Feature 10: Evaluate Answer ─────────────────────────────────────────────
 const evaluateAnswer = async (question, correctAnswer, userAnswer, maxPoints) => {
   if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing.");
 
