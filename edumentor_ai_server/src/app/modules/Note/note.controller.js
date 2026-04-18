@@ -34,9 +34,9 @@ const uploadNote = async (req, res, next) => {
       const { text: extractedText, pageCount } = await noteService.extractTextFromBuffer(buffer);
       const wordCount = extractedText.trim().split(/\s+/).length;
 
-      console.log(`📊 Extracted ${wordCount} words across ${pageCount} page(s). Generating AI summary with 500-word chunks...`);
+      console.log(`📊 Extracted ${wordCount} words across ${pageCount} page(s). Generating AI summary...`);
       const summary = await noteService.generateSummary(extractedText);
-      console.log("✅ AI Summary generated using vectorless RAG. Starting Cloudinary upload...");
+      console.log("✅ AI Summary generated. Starting Cloudinary upload...");
 
       const bufferStream = new stream.PassThrough();
       bufferStream.end(buffer);
@@ -67,7 +67,7 @@ const uploadNote = async (req, res, next) => {
               sendResponse(res, {
                 statusCode: 200,
                 success: true,
-                message: "Note uploaded, summarized with 500-word RAG chunks, and saved successfully!",
+                message: "Note uploaded, summarized, and saved successfully!",
                 data: {
                   _id: noteResult._id,
                   title: noteResult.title,
