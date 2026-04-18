@@ -219,7 +219,115 @@ const analyzeCode = async (code, language = "javascript", difficulty = "intermed
   throw lastError || new Error("All AI models failed to analyze code.");
 };
 
+const generateQuiz = async (topic, difficulty = "intermediate", numQuestions = 5) => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing in environment variables.");
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  let lastError;
+
+  const quizSystemPrompt = `You are a Quiz Generation AI. Your job is to generate multiple-choice quizzes based on a given topic and difficulty.
+Return ONLY a valid JSON array of objects, with each object following this exact structure:
+[
+  {
+    "question": "The question text, avoiding ambiguous wording.",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctAnswer": "The exact string from the options array that is correct.",
+    "explanation": "A short, 1-2 sentence explanation of why this answer is correct."
+  }
+]
+Do not wrap the array in any markdown or extra text. Generate exactly ${numQuestions} questions.`;
+
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const prompt = `[Topic: ${topic}, Difficulty: ${difficulty}]\nGenerate the quiz now.`;
+
+      const contents = [
+        { role: "user", parts: [{ text: quizSystemPrompt }] },
+        { role: "model", parts: [{ text: "Understood. I will generate a JSON array of multiple-choice questions." }] },
+        { role: "user", parts: [{ text: prompt }] }
+      ];
+
+      const result = await model.generateContent({ contents });
+      const response = await result.response;
+      const text = response.text();
+
+      let parsedResponse;
+      try {
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        parsedResponse = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+      } catch (e) {
+        throw new Error("Failed to parse AI response as JSON array.");
+      }
+
+      return parsedResponse;
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+  throw lastError || new Error("All AI models failed to generate quiz.");
+};
+
+const evaluateAnswer = async (question, userAnswer) => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is missing in environment variables.");
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  let lastError;
+
+  const evaluatorSystemPrompt = `You are an AI Answer Evaluator for an educational platform.
+Evaluation criteria: Clarity, accuracy, depth, and structural logic.
+Return ONLY a valid JSON object matching this exact structure:
+{
+  "score": 8, // A number between 0 and 10
+  "strengths": ["Point 1", "Point 2"], // Array of positive aspects
+  "keyMissingPoints": ["Point 1", "Point 2"], // Array of missing or incorrect points
+  "improvements": ["Tip 1", "Tip 2"], // Array of specific tips for improvement
+  "suggestedAnswer": "A concise, high-quality sample answer that would earn 10/10."
+}
+Do not wrap the JSON in markdown or extra text.`;
+
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const prompt = `[Question: ${question}]\n\n[Student Answer: ${userAnswer}]\n\nPlease evaluate the student's answer.`;
+
+      const contents = [
+        { role: "user", parts: [{ text: evaluatorSystemPrompt }] },
+        { role: "model", parts: [{ text: "Understood. I will evaluate the answer and return only a JSON object." }] },
+        { role: "user", parts: [{ text: prompt }] }
+      ];
+
+      const result = await model.generateContent({ contents });
+      const response = await result.response;
+      const text = response.text();
+
+      let parsedResponse;
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        parsedResponse = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+      } catch (e) {
+        throw new Error("Failed to parse AI response as JSON object.");
+      }
+
+      return parsedResponse;
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+  }
+  throw lastError || new Error("All AI models failed to evaluate the answer.");
+};
+
 module.exports = {
   generateExplanation,
   analyzeCode,
+  generateQuiz,
+  evaluateAnswer,
 };
