@@ -4,6 +4,8 @@ const AuthRoutes = require("../modules/Auth/auth.route");
 const AIRoutes = require("../modules/AI/ai.route");
 const ConceptRoutes = require("../modules/Concept/concept.route");
 const NoteRoutes = require("../modules/Note/note.route");
+const StudySessionRoutes = require("../modules/StudySession/studySession.route");
+const GoalRoutes = require("../modules/Goal/goal.route");
 
 const moduleRoutes = [
   {
@@ -21,6 +23,14 @@ const moduleRoutes = [
   {
     path: "/notes",
     route: NoteRoutes,
+  },
+  {
+    path: "/sessions",
+    route: StudySessionRoutes,
+  },
+  {
+    path: "/goals",
+    route: GoalRoutes,
   },
 ];
 
