@@ -6,6 +6,7 @@ const ConceptRoutes = require("../modules/Concept/concept.route");
 const NoteRoutes = require("../modules/Note/note.route");
 const StudySessionRoutes = require("../modules/StudySession/studySession.route");
 const GoalRoutes = require("../modules/Goal/goal.route");
+const QuizRoutes = require("../modules/Quiz/quiz.route");
 
 const moduleRoutes = [
   {
@@ -31,6 +32,10 @@ const moduleRoutes = [
   {
     path: "/goals",
     route: GoalRoutes,
+  },
+  {
+    path: "/quizzes",
+    route: QuizRoutes,
   },
 ];
 

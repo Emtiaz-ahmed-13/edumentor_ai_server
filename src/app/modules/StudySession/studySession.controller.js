@@ -1,5 +1,6 @@
 const sendResponse = require("../../utils/sendResponse");
 const StudySession = require("./studySession.model");
+const QuizResult = require("../Quiz/quizResult.model");
 
 const getCurrentSession = async (req, res, next) => {
   try {
@@ -89,16 +90,28 @@ const getAnalyticsSummary = async (req, res, next) => {
       });
     }
 
-    // Weak mock topics distribution if real data is missing
-    let allTopics = sessions.reduce((acc, s) => acc.concat(s.topics), []);
-    if(allTopics.length === 0) allTopics = ["React", "Node.js", "MongoDB", "Express", "React"];
+    // Feature 15: Real topic-wise accuracy from QuizResults
+    const quizResults = await QuizResult.find({ userId: req.auth?.userId || "guest" });
+    let topicWiseAccuracy = [];
     
-    const topicCounts = allTopics.reduce((acc, topic) => {
-      acc[topic] = (acc[topic] || 0) + 1;
-      return acc;
-    }, {});
-    
-    const topicWiseAccuracy = Object.entries(topicCounts).map(([name, value]) => ({ name, value }));
+    if (quizResults.length > 0) {
+      const subjectStats = {};
+      quizResults.forEach(r => {
+        if (!subjectStats[r.subject]) subjectStats[r.subject] = { total: 0, count: 0 };
+        subjectStats[r.subject].total += r.accuracy;
+        subjectStats[r.subject].count += 1;
+      });
+      
+      topicWiseAccuracy = Object.entries(subjectStats).map(([name, stats]) => ({
+        name,
+        value: Math.round(stats.total / stats.count)
+      }));
+    } else {
+      // Fallback mock topics if no quizzes taken yet
+      topicWiseAccuracy = [
+        { name: "General Knowledge", value: 0 },
+      ];
+    }
 
     // Weekly performance (Mock recent weeks)
     const weeklyPerformance = [

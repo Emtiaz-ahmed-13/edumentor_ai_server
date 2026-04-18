@@ -15,6 +15,8 @@ const upload = multer({
 router.post("/generate", quizController.generateQuiz);
 router.post("/generate-from-pdf", upload.single("pdf"), quizController.generateFromPdf);
 router.post("/evaluate-answer", quizController.evaluateAnswer);
+router.post("/submit", quizController.submitQuizResult);
+router.get("/weak-topics", quizController.getWeakTopics);
 router.get("/history", quizController.getQuizHistory);
 router.get("/:id", quizController.getQuizById);
 router.delete("/:id", quizController.deleteQuiz);

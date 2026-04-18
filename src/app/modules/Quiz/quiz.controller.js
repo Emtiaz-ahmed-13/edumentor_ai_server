@@ -2,6 +2,7 @@ const pdfParse = require("pdf-parse-new");
 const sendResponse = require("../../utils/sendResponse");
 const quizService = require("./quiz.service");
 const Quiz = require("./quiz.model");
+const QuizResult = require("./quizResult.model");
 
 // Feature 9: Generate quiz from topic or pasted material
 const generateQuiz = async (req, res, next) => {
@@ -135,4 +136,87 @@ const deleteQuiz = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { generateQuiz, generateFromPdf, evaluateAnswer, getQuizHistory, getQuizById, deleteQuiz };
+// Feature 11 & 15: Submit quiz result and track analytics
+const submitQuizResult = async (req, res, next) => {
+  try {
+    const { quizId, subject, score, totalQuestions, difficulty, topics } = req.body;
+    
+    const accuracy = (score / totalQuestions) * 100;
+    
+    const result = await QuizResult.create({
+      userId: req.auth?.userId || "guest",
+      quizId,
+      subject: subject || "General",
+      score,
+      totalQuestions,
+      accuracy,
+      difficulty,
+      topics
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Result submitted successfully!",
+      data: result,
+    });
+  } catch (error) { next(error); }
+};
+
+// Feature 11: Detect weak topics
+const getWeakTopics = async (req, res, next) => {
+  try {
+    const results = await QuizResult.find({ userId: req.auth?.userId || "guest" });
+
+    if (results.length === 0) {
+      return sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        data: {
+          totalQuizzes: 0,
+          weakTopics: [],
+          performanceData: [],
+        },
+      });
+    }
+
+    // Aggregate accuracy by subject
+    const subjectStats = {};
+    results.forEach(r => {
+      if (!subjectStats[r.subject]) {
+        subjectStats[r.subject] = { totalAccuracy: 0, count: 0 };
+      }
+      subjectStats[r.subject].totalAccuracy += r.accuracy;
+      subjectStats[r.subject].count += 1;
+    });
+
+    const performanceData = Object.entries(subjectStats).map(([subject, stats]) => ({
+      subject,
+      accuracy: Math.round(stats.totalAccuracy / stats.count),
+    }));
+
+    // Weak topics are those with < 70% accuracy
+    const weakTopics = performanceData.filter(p => p.accuracy < 70);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      data: {
+        totalQuizzes: results.length,
+        weakTopics,
+        performanceData,
+      },
+    });
+  } catch (error) { next(error); }
+};
+
+module.exports = { 
+  generateQuiz, 
+  generateFromPdf, 
+  evaluateAnswer, 
+  getQuizHistory, 
+  getQuizById, 
+  deleteQuiz,
+  submitQuizResult,
+  getWeakTopics
+};
