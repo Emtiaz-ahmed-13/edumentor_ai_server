@@ -47,6 +47,12 @@ const moduleRoutes = [
     path: "/document-qa",
     route: DocumentQARoutes,
   },
+  
+  {
+  path: "/sessions", 
+  route: StudySessionRoutes,
+}
+  
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
