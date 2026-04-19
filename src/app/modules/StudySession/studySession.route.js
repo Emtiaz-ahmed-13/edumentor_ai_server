@@ -8,4 +8,9 @@ router.patch("/:id", controller.updateSession);
 router.get("/history", controller.getHistory);
 router.get("/analytics", controller.getAnalyticsSummary);
 
+// New endpoints for Smart Study Modes
+router.post("/session", controller.logSession);
+router.post("/update-schedule", controller.updateSchedule);
+router.get("/due", controller.getDueNotes);
+
 module.exports = router;

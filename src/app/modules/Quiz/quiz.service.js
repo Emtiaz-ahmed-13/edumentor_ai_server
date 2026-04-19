@@ -118,4 +118,60 @@ Grading: A=90-100, B=80-89, C=70-79, D=60-69, F=below 60.`;
   };
 };
 
-module.exports = { generateQuiz, evaluateAnswer };
+const generateQuizFromPDFBuffer = async (buffer, difficulty, numQuestions, fileName) => {
+  if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing.");
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: MODEL });
+
+  const mcqCount = Math.round(numQuestions * 0.5);
+  const tfCount = Math.round(numQuestions * 0.25);
+  const saCount = numQuestions - mcqCount - tfCount;
+
+  const prompt = `You are EduMentor AI. I have uploaded a PDF titled "${fileName}".
+Based ONLY on the content of this document, generate a JSON quiz.
+
+Difficulty: ${difficulty}
+Questions needed: ${mcqCount} MCQ, ${tfCount} True/False, ${saCount} Short-Answer
+
+Return ONLY this JSON (no markdown):
+{
+  "title": "${fileName} Quiz",
+  "subject": "Detected academic subject",
+  "questions": [
+    {"type":"mcq","question":"?","options":["A) ...","B) ...","C) ...","D) ..."],"correctAnswer":"A) ...","explanation":"...","points":10},
+    {"type":"true-false","question":"statement","options":["True","False"],"correctAnswer":"True","explanation":"...","points":5},
+    {"type":"short-answer","question":"?","options":[],"correctAnswer":"model answer","explanation":"...","points":15}
+  ]
+}`;
+
+  const result = await callWithRetry(model, [
+    {
+      role: "user",
+      parts: [
+        { text: prompt },
+        {
+          inlineData: {
+            data: buffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        }
+      ]
+    }
+  ]);
+
+  const parsed = safeParseJSON(result.response.text());
+
+  if (!Array.isArray(parsed.questions) || parsed.questions.length === 0)
+    throw new Error("AI returned quiz with no questions.");
+
+  return {
+    title: parsed.title || `${fileName} Quiz`,
+    subject: parsed.subject || "General",
+    questions: parsed.questions,
+    totalQuestions: parsed.questions.length,
+    totalPoints: parsed.questions.reduce((sum, q) => sum + (q.points || 10), 0),
+  };
+};
+
+module.exports = { generateQuiz, evaluateAnswer, generateQuizFromPDFBuffer };

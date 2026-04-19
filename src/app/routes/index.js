@@ -7,6 +7,8 @@ const NoteRoutes = require("../modules/Note/note.route");
 const StudySessionRoutes = require("../modules/StudySession/studySession.route");
 const GoalRoutes = require("../modules/Goal/goal.route");
 const QuizRoutes = require("../modules/Quiz/quiz.route");
+const NotificationRoutes = require("../modules/Notification/notification.route");
+const DocumentQARoutes = require("../modules/DocumentQA/documentQA.route");
 
 const moduleRoutes = [
   {
@@ -26,7 +28,7 @@ const moduleRoutes = [
     route: NoteRoutes,
   },
   {
-    path: "/sessions",
+    path: "/study",
     route: StudySessionRoutes,
   },
   {
@@ -36,6 +38,14 @@ const moduleRoutes = [
   {
     path: "/quizzes",
     route: QuizRoutes,
+  },
+  {
+    path: "/notifications",
+    route: NotificationRoutes,
+  },
+  {
+    path: "/document-qa",
+    route: DocumentQARoutes,
   },
 ];
 

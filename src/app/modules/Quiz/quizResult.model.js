@@ -10,6 +10,8 @@ const quizResultSchema = new mongoose.Schema(
     accuracy: { type: Number, required: true }, // percentage
     difficulty: { type: String, enum: ["beginner", "intermediate", "advanced"] },
     topics: [{ type: String }],
+    userAnswers: { type: Object, default: {} },
+    evaluations: { type: Object, default: {} },
   },
   { timestamps: true }
 );

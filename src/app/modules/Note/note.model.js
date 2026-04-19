@@ -30,6 +30,19 @@ const noteSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Spaced Repetition Fields
+    nextReviewDate: {
+      type: Date,
+      default: Date.now,
+    },
+    repetitionInterval: {
+      type: Number,
+      default: 0, // in days
+    },
+    easeFactor: {
+      type: Number,
+      default: 2.5,
+    },
   },
   {
     timestamps: true,

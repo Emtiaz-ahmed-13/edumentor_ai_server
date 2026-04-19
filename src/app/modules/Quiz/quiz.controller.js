@@ -51,19 +51,16 @@ const generateFromPdf = async (req, res, next) => {
     if (!req.file) return res.status(400).json({ success: false, message: "PDF file is required." });
 
     const { difficulty = "intermediate", numQuestions = 10 } = req.body;
-
-    let extractedText;
-    try {
-      const data = await pdfParse(req.file.buffer);
-      extractedText = data.text;
-      if (!extractedText?.trim()) return res.status(400).json({ success: false, message: "PDF contains no extractable text." });
-    } catch {
-      return res.status(400).json({ success: false, message: "Failed to read PDF file." });
-    }
-
     const count = Math.min(Math.max(parseInt(numQuestions) || 10, 3), 20);
     const fileName = req.file.originalname.replace(".pdf", "");
-    const result = await quizService.generateQuiz(fileName, difficulty, count, "material", extractedText);
+
+    console.log(`📄 Sending PDF to Gemini for multimodal quiz generation: ${fileName}`);
+    const result = await quizService.generateQuizFromPDFBuffer(
+      req.file.buffer,
+      difficulty,
+      count,
+      fileName
+    );
 
     let savedQuiz;
     try {
@@ -139,7 +136,7 @@ const deleteQuiz = async (req, res, next) => {
 // Feature 11 & 15: Submit quiz result and track analytics
 const submitQuizResult = async (req, res, next) => {
   try {
-    const { quizId, subject, score, totalQuestions, difficulty, topics } = req.body;
+    const { quizId, subject, score, totalQuestions, difficulty, topics, userAnswers, evaluations } = req.body;
     
     const accuracy = (score / totalQuestions) * 100;
     
@@ -151,7 +148,9 @@ const submitQuizResult = async (req, res, next) => {
       totalQuestions,
       accuracy,
       difficulty,
-      topics
+      topics,
+      userAnswers: userAnswers || {},
+      evaluations: evaluations || {}
     });
 
     sendResponse(res, {
@@ -210,6 +209,23 @@ const getWeakTopics = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+const getLatestResult = async (req, res, next) => {
+  try {
+    const { quizId } = req.params;
+    const result = await QuizResult.findOne({ 
+      quizId, 
+      userId: req.auth?.userId || "guest" 
+    }).sort({ createdAt: -1 });
+    
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Latest result fetched.",
+      data: result
+    });
+  } catch (error) { next(error); }
+};
+
 module.exports = { 
   generateQuiz, 
   generateFromPdf, 
@@ -218,5 +234,6 @@ module.exports = {
   getQuizById, 
   deleteQuiz,
   submitQuizResult,
-  getWeakTopics
+  getWeakTopics,
+  getLatestResult
 };

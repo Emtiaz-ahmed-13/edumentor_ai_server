@@ -1,6 +1,7 @@
 const sendResponse = require("../../utils/sendResponse");
 const StudySession = require("./studySession.model");
 const QuizResult = require("../Quiz/quizResult.model");
+const Note = require("../Note/note.model");
 
 const getCurrentSession = async (req, res, next) => {
   try {
@@ -154,9 +155,96 @@ const getAnalyticsSummary = async (req, res, next) => {
   }
 };
 
+const logSession = async (req, res, next) => {
+  try {
+    const { type, duration, noteId } = req.body;
+    const userId = req.auth?.userId || "guest";
+
+    const session = await StudySession.create({
+      userId,
+      type,
+      durationMinutes: duration,
+      noteId,
+      sessionDateString: new Date().toISOString().split("T")[0],
+    });
+
+    sendResponse(res, {
+      statusCode: 201,
+      success: true,
+      message: "Study session logged successfully",
+      data: session,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDueNotes = async (req, res, next) => {
+  try {
+    const userId = req.auth?.userId || "guest";
+    const today = new Date();
+
+    // Find notes where nextReviewDate <= now
+    const notes = await Note.find({
+      userId,
+      nextReviewDate: { $lte: today },
+    }).limit(10);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Due notes fetched successfully",
+      data: notes.map(n => ({ _id: n._id, noteId: n })), // Wrap to match frontend expectation
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateSchedule = async (req, res, next) => {
+  try {
+    const { noteId, performance } = req.body; // performance 0-3
+    const note = await Note.findById(noteId);
+
+    if (!note) {
+      return res.status(404).json({ success: false, message: "Note not found" });
+    }
+
+    // Simplified Spaced Repetition (SM-2 Lite)
+    let interval = note.repetitionInterval || 0;
+    
+    if (performance >= 2) { // Good or Perfect
+      if (interval === 0) interval = 1;
+      else if (interval === 1) interval = 3;
+      else interval = Math.round(interval * 2);
+    } else { // Hard or Forgot
+      interval = 0; // Reset for review tomorrow
+    }
+
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + interval);
+
+    note.repetitionInterval = interval;
+    note.nextReviewDate = nextDate;
+    await note.save();
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Study schedule updated",
+      data: note,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCurrentSession,
   updateSession,
   getHistory,
-  getAnalyticsSummary
+  getAnalyticsSummary,
+  logSession,
+  getDueNotes,
+  updateSchedule,
 };

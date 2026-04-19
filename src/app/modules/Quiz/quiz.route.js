@@ -20,5 +20,6 @@ router.get("/weak-topics", quizController.getWeakTopics);
 router.get("/history", quizController.getQuizHistory);
 router.get("/:id", quizController.getQuizById);
 router.delete("/:id", quizController.deleteQuiz);
+router.get("/result/:quizId", quizController.getLatestResult);
 
 module.exports = router;
