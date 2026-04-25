@@ -9,9 +9,26 @@ const app = express();
 // parsers
 app.use(express.json());
 app.use(cookieParser());
-const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : ["http://localhost:5173", "http://localhost:3000"];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(",").map(origin => origin.trim()) 
+  : ["http://localhost:5173", "http://localhost:3000"];
+
+console.log("🚀 Allowed CORS Origins:", allowedOrigins);
+
+app.use(cors({ 
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+      callback(null, true);
+    } else {
+      console.error(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  }, 
+  credentials: true 
+}));
 
 // application routes
 app.use("/api/v1", router);
