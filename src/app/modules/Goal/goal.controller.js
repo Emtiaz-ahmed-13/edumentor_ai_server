@@ -111,6 +111,8 @@ const getProductivityScore = async (req, res, next) => {
   }
 };
 
+
+
 module.exports = {
   createGoal,
   getGoals,

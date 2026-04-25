@@ -8,7 +8,7 @@ const goalSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["daily", "weekly"],
+      enum: ["daily", "weekly", "Study"],
       required: true,
     },
     targetDuration: {
@@ -38,6 +38,7 @@ goalSchema.pre("save", function(next) {
   } else {
     this.status = "In Progress";
   }
+  
   next();
 });
 

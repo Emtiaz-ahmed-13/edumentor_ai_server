@@ -12,7 +12,7 @@ const createUser = async (payload) => {
 
 const loginUser = async (payload) => {
   const { email, password } = payload;
-  const isUserExist = await User.findOne({ email }, { __v: 0 });
+  const isUserExist = await User.findOne({ email }).select('+password');
 
   if (!isUserExist) {
     throw new ApiError(404, "User does not exist");
