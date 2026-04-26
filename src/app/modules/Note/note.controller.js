@@ -22,6 +22,16 @@ const uploadNote = async (req, res, next) => {
       });
     }
 
+    // --- 10MB Size Limit Check ---
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    if (req.file.size > MAX_SIZE) {
+      return res.status(400).json({
+        success: false,
+        message: "File size exceeds 2MB limit",
+      });
+    }
+    // ----------------------------
+
     const userId = req.auth?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -94,6 +104,7 @@ const uploadNote = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // ─── Get All Notes ────────────────────────────────────────────────────────────
 const getAllNotes = async (req, res, next) => {
@@ -247,7 +258,6 @@ const askFromNote = async (req, res, next) => {
     next(error);
   }
 };
-
 module.exports = {
   uploadNote,
   getAllNotes,
