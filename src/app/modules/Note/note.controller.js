@@ -27,7 +27,7 @@ const uploadNote = async (req, res, next) => {
     if (req.file.size > MAX_SIZE) {
       return res.status(400).json({
         success: false,
-        message: "File size exceeds 2MB limit",
+        message: "File size exceeds 10MB limit",
       });
     }
     // ----------------------------
@@ -97,11 +97,17 @@ const uploadNote = async (req, res, next) => {
       );
     } catch (processError) {
       console.error("Error processing note content:", processError);
-      return next(processError);
+      return res.status(400).json({
+        success: false,
+        message: processError.message || "Failed to process the PDF. Make sure it contains readable text.",
+      });
     }
   } catch (error) {
     console.error("Upload note error:", error);
-    next(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during upload.",
+    });
   }
 };
 
