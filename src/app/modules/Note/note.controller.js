@@ -60,7 +60,10 @@ const uploadNote = async (req, res, next) => {
           async (error, uploadResult) => {
             if (error) {
               console.error("Cloudinary upload error:", error);
-              return next(error);
+              return res.status(500).json({
+                success: false,
+                message: "Failed to upload file to Cloudinary.",
+              });
             }
 
             try {
@@ -90,7 +93,10 @@ const uploadNote = async (req, res, next) => {
               });
             } catch (err) {
               console.error("Error saving note to DB:", err);
-              next(err);
+              return res.status(500).json({
+                success: false,
+                message: "Failed to save note to database.",
+              });
             }
           }
         )
